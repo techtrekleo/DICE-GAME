@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>骰子遊戲-物件練習</title>
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            background: radial-gradient(circle at center, #2b1b17 0%, #1a1110 100%); /* 賭場地毯暗色背景 */
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+        h1 {
+            color: #ffd700; /* 賭場金色 */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        button {
+            background: linear-gradient(to bottom, #e5c158, #c49a30); /* 金色漸層 */
+            color: #1a1a1a;
+            border: 2px solid #fff;
+            padding: 12px 24px;
+            margin: 10px;
+            border-radius: 25px; /* 類似籌碼的圓角設計 */
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: linear-gradient(to bottom, #f3d473, #e5c158);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0,0,0,0.5);
+        }
+        button:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .all-in-btn {
+            background: linear-gradient(to bottom, #ff5252, #c62828); /* 全下按鈕改用紅色漸層 */
+            color: #fff;
+            padding: 6px 16px;
+            margin: 0 0 0 10px; /* 緊貼在輸入框右側 */
+        }
+        .all-in-btn:hover {
+            background: linear-gradient(to bottom, #ff8a80, #ff5252);
+        }
+        .poker-table {
+            background: radial-gradient(ellipse at center, #388e3c 0%, #1b5e20 100%); /* 賭場綠色絨布桌面 */
+            border: 20px solid #5c4033; /* 咖啡色深木頭邊框 */
+            border-radius: 150px; /* 圓角橢圓形 */
+            width: 95%;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8), inset 0 0 40px rgba(0,0,0,0.6);
+            min-height: 650px;
+        }
+        .player-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .player-label {
+            font-size: 20px;
+            color: #ffd700;
+            background: rgba(0,0,0,0.6);
+            padding: 5px 25px;
+            border-radius: 15px;
+            border: 1px solid #e5c158;
+        }
+        .dice-result {
+            font-size: 24px;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            width: 90%;
+            max-width: 500px;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        #comparison {
+            font-weight: bold;
+            font-size: 32px;
+            margin: 20px 0;
+            color: #ff5252;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 40px;
+            border-radius: 20px;
+            border: 2px solid #ff5252;
+        }
+        #score {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #ffd700;
+            margin: 20px auto;
+            max-width: 600px;
+            font-weight: bold;
+            color: #ffd700;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .controls {
+            margin-top: 20px;
+        }
+        .layout-container {
+            position: relative;
+            max-width: 1700px; /* 進一步加寬，為加長後的紀錄表保留絕對安全的距離 */
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .game-section {
+            margin: 0 auto;
+            width: 100%;
+            max-width: 900px;
+        }
+        .history-section {
+            width: 380px; /* 再次加寬以容納下注金額文字 */
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #ffd700;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            text-align: left;
+            margin-top: 20px;
+            box-sizing: border-box;
+        }
+        #end-game-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none; /* Initially hidden */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: #fff;
+            text-align: center;
+        }
+        #end-game-content {
+            background: #1a1110;
+            padding: 40px;
+            border-radius: 20px;
+            border: 2px solid #ffd700;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 寬螢幕時，將歷史紀錄絕對定位在右側邊軸 */
+        @media (min-width: 1700px) {
+            .history-section {
+                position: absolute;
+                top: 0;
+                right: 0;
+            }
+        }
+
+        /* 螢幕較窄時，將歷史紀錄放到下方並置中，防止遮擋到賭桌 */
+        @media (max-width: 1699px) {
+            .history-section {
+                margin: 20px auto;
+            }
+        }
+        .history-section h3 {
+            color: #ffd700;
+            margin-top: 0;
+            border-bottom: 1px solid #ffd700;
+            padding-bottom: 10px;
+            text-align: center;
+            font-size: 20px;
+        }
+        #history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #history-list li {
+            padding: 12px 0;
+            border-bottom: 1px dashed rgba(255,255,255,0.3);
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+        }
+        #history-list li:last-child {
+            border-bottom: none;
+        }
+        .win-text {
+            color: #ff5252;
+            font-weight: bold;
+        }
+    </style>
+    <script>
+
+    // 評估四顆骰子的得分 (十八仔規則)
+    function evaluateDice(arr) {
+        // 將陣列由小到大排序方便判斷
+        var sorted = arr.slice().sort(function(a, b){return a - b});
+        var a = sorted[0], b = sorted[1], c = sorted[2], d = sorted[3];
+        
+        if (a === b && b === c && c === d) return { score: 1000 + a, text: '一色(' + a + ')' };
+        if ((a === b && b === c) || (b === c && c === d)) return { score: 0, text: '無點' }; // 三顆一樣也是無點
+        if (a === b && c === d) return { score: c + d, text: (c + d) + '點(雙)' }; // 兩對，取大對子(即c,d)相加
+        if (a === b) return { score: c + d, text: (c + d) + '點' };
+        if (b === c) return { score: a + d, text: (a + d) + '點' };
+        if (c === d) return { score: a + b, text: (a + b) + '點' };
+        
+        return { score: 0, text: '無點' }; // 四顆皆不同
+    }
+
+    function Dice() {
+        this.score = 0;
+        this.evalText = "";
+        this.isRolling = false;
+        this.timer = null; // 用來紀錄動畫計時器
+        this.diceSymbols = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+        this.play = function(playerId) {
+            if (this.isRolling || this.score > 0) return; // 如果正在轉動，或已有分數，就忽略點擊
+            
+            if (playerChips < 1000) {
+                alert("籌碼不足 1000 元，您已經破產了！請點擊重置總分重新開始。");
+                return;
+            }
+            
+            var betInput = document.getElementById("betAmount");
+            var bet = parseInt(betInput.value, 10);
+            if (isNaN(bet) || bet < 1000) {
+                alert("每次最少下注 1000 元！");
+                return;
+            }
+            if (bet > playerChips) {
+                alert("籌碼不足！您目前剩下 " + playerChips + " 元");
+                return;
+            }
+            betInput.disabled = true; // 遊戲開始後鎖定下注金額，防止中途偷改
+
+            this.isRolling = true;
+            this.score = 0;
+            var self = this;
+            var element = document.getElementById("result" + playerId);
+            var playerName = playerId === 'A' ? '莊家' : '玩家';
+            
+            // 讓四顆骰子有不同的隨機停止時間，製造不規則停下的感覺
+            var stopTimes = [15, 22, 29, 36];
+            stopTimes.sort(function() { return Math.random() - 0.5; }); // 打亂停止順序
+            var targets = stopTimes;
+            var counts = [0, 0, 0, 0];
+            
+            // 先決定最終四顆骰子的點數
+            var finalDice = [0, 0, 0, 0];
+            for(let i=0; i<4; i++) {
+                if (cheatMode && playerId === 'A') {
+                    finalDice[i] = 4 + Math.floor(Math.random() * 3);
+                } else {
+                    finalDice[i] = 1 + Math.floor(Math.random() * 6);
+                }
+            }
+            
+            var currentFaces = [1, 1, 1, 1];
+            
+            this.timer = setInterval(function() {
+                let allStopped = true;
+                for(let i=0; i<4; i++) {
+                    if (counts[i] < targets[i]) {
+                        currentFaces[i] = 1 + Math.floor(Math.random() * 6);
+                        counts[i]++;
+                        allStopped = false;
+                    } else {
+                        currentFaces[i] = finalDice[i];
+                    }
+                }
+                
+                let html = "<div>" + playerName + " 擲出了</div><div style='margin: 10px 0;'>";
+                for(let i=0; i<4; i++) {
+                    html += "<span style='font-size: 3.5em; margin: 0 5px; line-height: 1;'>" + self.diceSymbols[currentFaces[i] - 1] + "</span>";
+                }
+                html += "</div>";
+                
+                if (!allStopped) {
+                    html += "<div style='font-size: 1.2em; color: #ccc;'>(轉動中...)</div>";
+                    element.innerHTML = html;
+                } else {
+                    clearInterval(self.timer);
+                    self.timer = null;
+                    self.isRolling = false;
+                    
+                    let evalResult = evaluateDice(finalDice);
+                    self.score = evalResult.score;
+                    self.evalText = evalResult.text;
+                    
+                    if (self.score === 0) {
+                        html += "<div style='font-size: 1.2em; color: #ff9800; font-weight: bold;'>" + self.evalText + "，請重骰！</div>";
+                        element.innerHTML = html;
+                    } else {
+                        html += "<div style='font-size: 1.2em; color: #4caf50; font-weight: bold;'>(" + self.evalText + ")</div>";
+                        element.innerHTML = html;
+                        checkComparison();
+                    }
+                }
+            }, 60); // 每 60 毫秒變換一次
+        };
+        
+        this.reset = function() {
+            if (this.timer) {
+                clearInterval(this.timer);
+                this.timer = null;
+            }
+            this.isRolling = false;
+            this.score = 0;
+            this.evalText = "";
+        };
+    }
+
+    var dices = [new Dice(), new Dice()];
+    var wins = [0, 0];
+    var totalRounds = 0;
+    var roundComplete = false;
+    var cheatMode = false; // 作弊模式，預設關閉
+    var historyRecords = []; // 儲存最近十場紀錄的陣列
+    var autoResetTimer = null; // 用來記錄自動開始新局的計時器
+    var playerChips = 10000; // 玩家初始籌碼
+
+    // 隱藏作弊功能：雙擊標題啟用/停用
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelector('h1').addEventListener('dblclick', function() {
+            cheatMode = !cheatMode;
+            alert(cheatMode ? '作弊模式啟用！莊家點數將更高' : '作弊模式停用');
+        });
+    });
+
+    function checkComparison() {
+        // 使用陣列的 every 方法來檢查是否所有玩家都已經擲出點數
+        var allRolled = dices.every(function(dice) { return dice.score > 0; });
+        
+        if (allRolled && !roundComplete) {
+            totalRounds++;
+            var result;
+            var bet = parseInt(document.getElementById("betAmount").value, 10);
+            var betResultText = "";
+            
+            if (dices[0].score > dices[1].score) {
+                result = "莊家 獲勝！";
+                wins[0]++;
+                playerChips -= bet;
+                betResultText = "<span style='color: #ff5252;'>-" + bet + "</span>";
+            } else if (dices[1].score > dices[0].score) {
+                result = "玩家 獲勝！";
+                wins[1]++;
+                playerChips += bet;
+                betResultText = "<span style='color: #4caf50;'>+" + bet + "</span>";
+            } else {
+                result = "平手！";
+                betResultText = "<span style='color: #ccc;'>+0</span>";
+            }
+            
+            updateScore(); // Update UI immediately
+
+            // Check for bankruptcy
+            if (playerChips <= 0) {
+                playerChips = 0;
+                updateScore(); // Update one last time to show $0
+                document.getElementById("comparison").innerHTML = result + "<br><span style='font-size: 18px; color: #ff5252;'>您已破產！2秒後結算...</span>";
+                if (autoResetTimer) clearTimeout(autoResetTimer);
+                
+                setTimeout(function() { leaveTable(0); }, 2000);
+                
+                roundComplete = true;
+                return; // Stop normal round reset
+            }
+
+            // 顯示結果，並提示 3 秒後自動新局
+            document.getElementById("comparison").innerHTML = result + "<br><span style='font-size: 18px; color: #e0e0e0; text-shadow: none;'>3秒後自動開始新局...</span>";
+            
+            // 紀錄該場勝負，整理文字方便排版
+            var shortResult = result.replace(" 獲勝！", "勝").replace("！", ""); 
+            var recordHtml = "<span>第 " + totalRounds + " 場</span><span>莊 " + dices[0].evalText + " vs 玩 " + dices[1].evalText + " <span class='win-text'>" + shortResult + "</span> " + betResultText + "</span>";
+            historyRecords.unshift(recordHtml); // 加到陣列開頭
+            if (historyRecords.length > 10) {
+                historyRecords.pop(); // 超過 10 筆則移除最舊的
+            }
+            updateHistory();
+            
+            roundComplete = true;
+            
+            // 設定 3 秒後自動重置遊戲桌面
+            autoResetTimer = setTimeout(function() {
+                resetGame();
+            }, 3000);
+        }
+    }
+
+    function updateScore() {
+        document.getElementById("win-counts").textContent = "莊家勝場: " + wins[0] + " | 玩家勝場: " + wins[1] + " | 總回合: " + totalRounds;
+        document.getElementById("chip-display").textContent = "玩家籌碼: $" + playerChips.toLocaleString();
+    }
+
+    function resetGame() {
+        if (autoResetTimer) {
+            clearTimeout(autoResetTimer); // 若手動按新回合，就取消自動新局的計時器
+            autoResetTimer = null;
+        }
+        dices.forEach(function(dice) { dice.reset(); }); // 透過迴圈一次重置所有骰子
+        roundComplete = false;
+        document.getElementById("resultA").innerHTML = "等待擲骰...";
+        document.getElementById("resultB").innerHTML = "等待擲骰...";
+        document.getElementById("comparison").textContent = "準備開始";
+        
+        var betInput = document.getElementById("betAmount");
+        betInput.disabled = false; // 新回合解除鎖定下注
+        if (parseInt(betInput.value, 10) > playerChips && playerChips >= 1000) {
+            betInput.value = playerChips; // 若輸到低於原本設定的金額，自動調低為 All-in 剩餘籌碼
+        }
+    }
+
+    function updateHistory() {
+        var list = document.getElementById("history-list");
+        list.innerHTML = "";
+        if (historyRecords.length === 0) {
+            list.innerHTML = "<li style='justify-content: center;'>暫無紀錄</li>";
+            return;
+        }
+        historyRecords.forEach(function(record) {
+            var li = document.createElement("li");
+            li.innerHTML = record;
+            list.appendChild(li);
+        });
+    }
+
+    function resetScore() {
+        wins = [0, 0]; // 將陣列分數歸零
+        totalRounds = 0;
+        playerChips = 10000; // 重置籌碼
+        document.getElementById("betAmount").disabled = false;
+        document.getElementById("betAmount").value = 1000;
+        historyRecords = []; // 清空紀錄
+        updateScore();
+        updateHistory(); // 更新畫面
+    }
+
+    function setAllIn() {
+        var betInput = document.getElementById("betAmount");
+        if (betInput.disabled) return; // 如果已經鎖定下注（遊戲進行中），則忽略
+        
+        if (playerChips < 1000) {
+            alert("籌碼不足 1000 元，無法下注！");
+            return;
+        }
+        betInput.value = playerChips; // 將金額直接設定為玩家目前的總籌碼
+    }
+
+    function handleLeaveTable() {
+        leaveTable(playerChips);
+    }
+
+    function leaveTable(finalChips) {
+        if (autoResetTimer) {
+            clearTimeout(autoResetTimer);
+            autoResetTimer = null;
+        }
+
+        var overlay = document.getElementById('end-game-overlay');
+        var title = document.getElementById('end-game-title');
+        var image = document.getElementById('end-game-image');
+        var chipsText = document.getElementById('end-game-chips');
+        
+        var resultTitle, imgSrc;
+
+        if (finalChips >= 15000) {
+            resultTitle = "賭神降臨！";
+            imgSrc = '賭神.jpg';
+        } else if (finalChips >= 8000) { // 8000 to 14999
+            resultTitle = "新一代賭聖！";
+            imgSrc = '賭聖.jpg';
+        } else if (finalChips > 0) { // 1 to 7999
+            resultTitle = "小賭怡情";
+            imgSrc = '賭聖.jpg'; // 重複使用一張圖作為代表
+        } else { // finalChips <= 0
+            resultTitle = "輸到脫褲！";
+            imgSrc = '脫褲子.jpg';
+        }
+
+        title.textContent = resultTitle;
+        image.src = imgSrc;
+        image.alt = resultTitle;
+        chipsText.textContent = '最終籌碼: $' + finalChips.toLocaleString();
+
+        document.querySelector('.layout-container').style.display = 'none';
+        document.getElementById('score').style.display = 'none';
+        document.querySelector('h1').style.display = 'none';
+        overlay.style.display = 'flex';
+    }
+
+    function playAgain() {
+        window.location.reload(); // 直接重新整理頁面，最簡單乾淨的重置方式
+    }
+    </script>
+    
+</head>
+<body>
+    <h1>骰子遊戲-賭場風雲</h1>
+    <div id="score">
+        <div id="win-counts">莊家勝場: 0 | 玩家勝場: 0 | 總回合: 0</div>
+        <div id="chip-display" style="color: #4caf50; font-size: 28px; margin-top: 10px; text-shadow: 1px 1px 2px #000;">玩家籌碼: $10,000</div>
+    </div>
+
+    <!-- 排版容器 -->
+    <div class="layout-container">
+        
+        <!-- 左側遊戲區 -->
+        <div class="game-section">
+            <!-- 賭桌區域 -->
+            <div class="poker-table">
+                
+                <!-- 莊家區 (Top) -->
+                <div class="player-area top-player">
+                    <div class="player-label" style="margin-bottom: 10px;">莊家 (Dealer)</div>
+                    <p id="resultA" class="dice-result">等待擲骰...</p>
+                    <button onclick="dices[0].play('A')">莊家擲骰子</button>
+                </div>
+                
+                <!-- 中間對決區 -->
+                <div class="center-area">
+                    <p id="comparison">準備開始</p>
+                </div>
+                
+                <!-- 玩家區 (Bottom) -->
+                <div class="player-area bottom-player">
+                    <div class="bet-container" style="margin-bottom: 10px;">
+                        <label for="betAmount" style="font-size: 18px; color: #ffd700;">下注金額：</label>
+                        <input type="number" id="betAmount" value="1000" min="1000" step="1000" style="padding: 5px; font-size: 18px; border-radius: 5px; width: 120px; text-align: center; background: rgba(255,255,255,0.9); border: 2px solid #ffd700; font-weight: bold;">
+                        <button type="button" class="all-in-btn" onclick="setAllIn()">All In 全下</button>
+                    </div>
+                    <button onclick="dices[1].play('B')">玩家擲骰子</button>
+                    <p id="resultB" class="dice-result">等待擲骰...</p>
+                    <div class="player-label" style="margin-top: 10px;">玩家 (Player)</div>
+                </div>
+
+            </div>
+
+            <!-- 底部控制按鈕 -->
+            <div class="controls">
+                <button onclick="handleLeaveTable()">離開賭桌</button>
+                <button onclick="resetScore()">重置總分</button>
+            </div>
+        </div>
+
+        <!-- 右側歷史紀錄區 -->
+        <div class="history-section">
+            <h3>最近十場紀錄</h3>
+            <ul id="history-list">
+                <li style="justify-content: center;">暫無紀錄</li>
+            </ul>
+        </div>
+
+    </div>
+
+    <!-- 遊戲結束畫面 -->
+    <div id="end-game-overlay">
+        <div id="end-game-content">
+            <h2 id="end-game-title"></h2>
+            <img id="end-game-image" src="" alt="Game Result" style="max-width: 80%; max-height: 400px; margin: 20px 0; border-radius: 10px;">
+            <p id="end-game-chips" style="font-size: 24px;"></p>
+            <button onclick="playAgain()">重新開始一局</button>
+        </div>
+    </div>
+
+</body>
+</html>
